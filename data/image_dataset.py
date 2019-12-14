@@ -37,13 +37,19 @@ class ImageDataset(data.Dataset, Configurable):
             with open(self.data_list[i], 'r') as fid:
                 image_list = fid.readlines()
             if self.is_training:
-                image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
-                gt_path=[self.data_dir[i]+'/train_gts/'+timg.strip()+'.txt' for timg in image_list]
+                if 'BusinessCards' in self.data_dir[0]:
+                    image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
+                    gt_path=[self.data_dir[i]+'/train_gts/'+timg.split('.')[0]+'.txt' for timg in image_list]
+                else:
+                    image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
+                    gt_path=[self.data_dir[i]+'/train_gts/'+timg.strip()+'.txt' for timg in image_list]
             else:
                 image_path=[self.data_dir[i]+'/test_images/'+timg.strip() for timg in image_list]
                 print(self.data_dir[i])
                 if 'TD500' in self.data_list[i] or 'total_text' in self.data_list[i]:
                     gt_path=[self.data_dir[i]+'/test_gts/'+timg.strip()+'.txt' for timg in image_list]
+                elif 'BusinessCards' in self.data_dir[0]:
+                    gt_path=[self.data_dir[i]+'/test_gts/'+timg.split('.')[0]+'.txt' for timg in image_list]
                 else:
                     gt_path=[self.data_dir[i]+'/test_gts/'+'gt_'+timg.strip().split('.')[0]+'.txt' for timg in image_list]
             self.image_paths += image_path
@@ -65,7 +71,7 @@ class ImageDataset(data.Dataset, Configurable):
                 if label == '1':
                     label = '###'
                 line = [i.strip('\ufeff').strip('\xef\xbb\xbf') for i in parts]
-                if 'icdar' in self.data_dir[0]:
+                if 'icdar' in self.data_dir[0] or 'BusinessCards' in self.data_dir[0]:
                     poly = np.array(list(map(float, line[:8]))).reshape((-1, 2)).tolist()
                 else:
                     num_points = math.floor((len(line) - 1) / 2) * 2

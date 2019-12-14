@@ -97,11 +97,12 @@ class Eval:
     def init_torch_tensor(self):
         # Use gpu or not
         torch.set_default_tensor_type('torch.FloatTensor')
-        if torch.cuda.is_available():
-            self.device = torch.device('cuda')
-            torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        else:
-            self.device = torch.device('cpu')
+        #if torch.cuda.is_available():
+            #self.device = torch.device('cuda')
+            #torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        #else:
+            #self.device = torch.device('cpu')
+        self.device = torch.device('cpu')
 
     def init_model(self):
         model = self.structure.builder.build(self.device)
@@ -119,8 +120,8 @@ class Eval:
 
     def report_speed(self, model, batch, times=100):
         data = {k: v[0:1]for k, v in batch.items()}
-        if  torch.cuda.is_available():
-            torch.cuda.synchronize()
+        #if  torch.cuda.is_available():
+        #    torch.cuda.synchronize()
         start = time.time() 
         for _ in range(times):
             pred = model.forward(data)
@@ -166,12 +167,14 @@ class Eval:
         all_matircs = {}
         model.eval()
         vis_images = dict()
+        total_time = 0
         with torch.no_grad():
             for _, data_loader in self.data_loaders.items():
                 raw_metrics = []
                 for i, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
                     if self.args['test_speed']:
                         time_cost = self.report_speed(model, batch, times=50)
+                        total_time += time_cost
                         continue
                     pred = model.forward(batch, training=False)
                     output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
@@ -180,14 +183,15 @@ class Eval:
                     self.format_output(batch, output)
                     raw_metric = self.structure.measurer.validate_measure(batch, output, is_output_polygon=self.args['polygon'], box_thresh=self.args['box_thresh'])
                     raw_metrics.append(raw_metric)
-
                     if visualize and self.structure.visualizer:
                         vis_image = self.structure.visualizer.visualize(batch, output, pred)
                         self.logger.save_image_dict(vis_image)
                         vis_images.update(vis_image)
-                metrics = self.structure.measurer.gather_measure(raw_metrics, self.logger)
-                for key, metric in metrics.items():
-                    self.logger.info('%s : %f (%d)' % (key, metric.avg, metric.count))
-
+                
+                if not self.args['test_speed']:
+                    metrics = self.structure.measurer.gather_measure(raw_metrics, self.logger)
+                    for key, metric in metrics.items():
+                        self.logger.info('%s : %f (%d)' % (key, metric.avg, metric.count))
+        self.logger.info('Average Inference speed: %fs' % (total_time/20))
 if __name__ == '__main__':
     main()

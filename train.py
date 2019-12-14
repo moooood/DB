@@ -2,7 +2,6 @@
 import argparse
 import time
 
-import ipdb
 import torch
 import yaml
 
@@ -49,7 +48,6 @@ def main():
     parser.set_defaults(debug=False)
     parser.set_defaults(benchmark=True)
 
-    ipdb.set_trace()
     args = parser.parse_args()
     args = vars(args)
     args = {k: v for k, v in args.items() if v is not None}

@@ -60,7 +60,6 @@ class QuadMeasurer(Configurable):
         precision = AverageMeter()
         recall = AverageMeter()
         fmeasure = AverageMeter()
-
         precision.update(result['precision'], n=len(raw_metrics))
         recall.update(result['recall'], n=len(raw_metrics))
         fmeasure_score = 2 * precision.val * recall.val /\

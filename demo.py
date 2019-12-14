@@ -56,12 +56,12 @@ class Demo:
     def init_torch_tensor(self):
         # Use gpu or not
         torch.set_default_tensor_type('torch.FloatTensor')
-        if torch.cuda.is_available():
-            self.device = torch.device('cuda')
-            torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        else:
-            self.device = torch.device('cpu')
-
+        #if torch.cuda.is_available():
+        #    self.device = torch.device('cuda')
+        #    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        #else:
+        #    self.device = torch.device('cpu')
+        self.device = torch.device('cpu')
     def init_model(self):
         model = self.structure.builder.build(self.device)
         return model

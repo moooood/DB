@@ -1,5 +1,4 @@
 import os
-
 import torch
 
 from concern.config import Configurable, State

@@ -36,7 +36,7 @@ class SegDetectorModel(nn.Module):
 
         self.model = BasicModel(args)
         # for loading models
-        self.model = parallelize(self.model, distributed, local_rank)
+        # self.model = parallelize(self.model, distributed, local_rank)
         self.criterion = SegDetectorLossBuilder(
             args['loss_class'], *args.get('loss_args', []), **args.get('loss_kwargs', {})).build()
         self.criterion = parallelize(self.criterion, distributed, local_rank)
