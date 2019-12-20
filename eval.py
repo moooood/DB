@@ -97,12 +97,12 @@ class Eval:
     def init_torch_tensor(self):
         # Use gpu or not
         torch.set_default_tensor_type('torch.FloatTensor')
-        #if torch.cuda.is_available():
-            #self.device = torch.device('cuda')
-            #torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        #else:
-            #self.device = torch.device('cpu')
-        self.device = torch.device('cpu')
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+            torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        else:
+            self.device = torch.device('cpu')
+        #self.device = torch.device('cpu')
 
     def init_model(self):
         model = self.structure.builder.build(self.device)
@@ -120,8 +120,8 @@ class Eval:
 
     def report_speed(self, model, batch, times=100):
         data = {k: v[0:1]for k, v in batch.items()}
-        #if  torch.cuda.is_available():
-        #    torch.cuda.synchronize()
+        if  torch.cuda.is_available():
+            torch.cuda.synchronize()
         start = time.time() 
         for _ in range(times):
             pred = model.forward(data)

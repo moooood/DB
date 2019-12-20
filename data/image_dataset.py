@@ -40,6 +40,9 @@ class ImageDataset(data.Dataset, Configurable):
                 if 'BusinessCards' in self.data_dir[0]:
                     image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
                     gt_path=[self.data_dir[i]+'/train_gts/'+timg.split('.')[0]+'.txt' for timg in image_list]
+                elif 'MLT' in self.data_dir[0]:
+                    image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list] 
+                    gt_path=[self.data_dir[i]+'/train_gts/'+'gt_'+timg.split('.')[0]+'.txt' for timg in image_list]
                 else:
                     image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
                     gt_path=[self.data_dir[i]+'/train_gts/'+timg.strip()+'.txt' for timg in image_list]
@@ -71,7 +74,7 @@ class ImageDataset(data.Dataset, Configurable):
                 if label == '1':
                     label = '###'
                 line = [i.strip('\ufeff').strip('\xef\xbb\xbf') for i in parts]
-                if 'icdar' in self.data_dir[0] or 'BusinessCards' in self.data_dir[0]:
+                if 'icdar' in self.data_dir[0] or 'BusinessCards' or 'MLT' in self.data_dir[0]:
                     poly = np.array(list(map(float, line[:8]))).reshape((-1, 2)).tolist()
                 else:
                     num_points = math.floor((len(line) - 1) / 2) * 2

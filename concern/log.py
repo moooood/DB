@@ -114,7 +114,7 @@ class Logger(Configurable):
 
         print('%d/%d batches processed in epoch %d, ETA: %2d:%2d:%2d' %
               (steps, total, epoch,
-               hours, minutes, seconds), end='\r')
+               hours, minutes, seconds))
 
     def args(self, parameters=None):
         if parameters is None:

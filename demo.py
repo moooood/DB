@@ -39,8 +39,13 @@ def main():
     experiment_args = conf.compile(conf.load(args['exp']))['Experiment']
     experiment_args.update(cmd=args)
     experiment = Configurable.construct_class_from_config(experiment_args)
-
-    Demo(experiment, experiment_args, cmd=args).inference(args['image_path'], args['visualize'])
+    files = os.listdir('/data/hongguan.liu/datasets/BusinessCards_DB/test_images/')
+    for file in files:
+        if 'jpg' in file:
+            file_path = os.path.join('/data/hongguan.liu/datasets/BusinessCards_DB/test_images/', file)
+        
+        Demo(experiment, experiment_args, cmd=args).inference(file_path, args['visualize'])
+   # Demo(experiment, experiment_args, cmd=args).inference(args['image_path'], args['visualize'])
 
 
 class Demo:
@@ -56,12 +61,12 @@ class Demo:
     def init_torch_tensor(self):
         # Use gpu or not
         torch.set_default_tensor_type('torch.FloatTensor')
-        #if torch.cuda.is_available():
-        #    self.device = torch.device('cuda')
-        #    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        #else:
-        #    self.device = torch.device('cpu')
-        self.device = torch.device('cpu')
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+            torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        else:
+            self.device = torch.device('cpu')
+        #self.device = torch.device('cpu')
     def init_model(self):
         model = self.structure.builder.build(self.device)
         return model

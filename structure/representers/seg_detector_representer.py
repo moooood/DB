@@ -7,7 +7,7 @@ from concern.config import Configurable, State
 class SegDetectorRepresenter(Configurable):
     thresh = State(default=0.3)
     box_thresh = State(default=0.7)
-    max_candidates = State(default=100)
+    max_candidates = State(default=1000)
     dest = State(default='binary')
 
     def __init__(self, cmd={}, **kwargs):
