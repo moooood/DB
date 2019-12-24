@@ -105,7 +105,7 @@ class Trainer:
 
     def train_step(self, model, optimizer, batch, epoch, step, **kwards):
         optimizer.zero_grad()
-
+        
         results = model.forward(batch, training=True)
         if len(results) == 2:
             l, pred = results

@@ -1,5 +1,4 @@
 from concern.config import State
-
 from .data_process import DataProcess
 
 

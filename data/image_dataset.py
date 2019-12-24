@@ -1,7 +1,6 @@
 import functools
 import logging
 import bisect
-
 import torch.utils.data as data
 import cv2
 import numpy as np
