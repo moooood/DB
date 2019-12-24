@@ -118,6 +118,15 @@ class SegDetector(nn.Module):
         self.out3.apply(self.weights_init)
         self.out2.apply(self.weights_init)
 
+        self.up_dp1.apply(self.weights_init)
+        self.up_dp2.apply(self.weights_init)
+        self.up_dp3.apply(self.weights_init)
+        self.down_dp1.apply(self.weights_init)
+        self.down_dp2.apply(self.weights_init)
+        self.down_dp3.apply(self.weights_init)
+
+
+
     def weights_init(self, m):
         classname = m.__class__.__name__
         if classname.find('Conv') != -1:
@@ -226,9 +235,10 @@ class SegDetector(nn.Module):
                 out_p3 = former_p3 + in3
                 out_p2 = former_p2 + in2
 
-        out_p5 = self._upsample(out_p5, out_p2)
-        out_p4 = self._upsample(out_p4, out_p2)
-        out_p3 = self._upsample(out_p3, out_p2)
+        out_p5 = self.out5(out_p5)
+        out_p4 = self.out4(out_p4)
+        out_p3 = self.out3(out_p3)
+        out_p2 = self.out2(out_p2)
 
         fuse = torch.cat((out_p2, out_p3, out_p4, out_p5), 1)
         '''
