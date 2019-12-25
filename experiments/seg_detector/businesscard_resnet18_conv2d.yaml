@@ -72,6 +72,6 @@ define:
         class: Logger
         verbose: true
         level: info
-        log_interval: 500
+        log_interval: 100
 
     evaluation: *validate

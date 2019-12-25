@@ -217,23 +217,15 @@ class SegDetector(nn.Module):
         in4 = self.in4(c4)
         in3 = self.in3(c3)
         in2 = self.in2(c2)
-
-        for i in range(2):
-            former_p5 = in5
-            former_p4 = in4
-            former_p3 = in3
-            former_p2 = in2
-            in5, in4, in3, in2 = self.make_fpem([in5, in4, in3, in2])
-            if i == 0:
-                out_p5 = in5
-                out_p4 = in4
-                out_p3 = in3
-                out_p2 = in2
-            else:
-                out_p5 = former_p5 + in5
-                out_p4 = former_p4 + in4
-                out_p3 = former_p3 + in3
-                out_p2 = former_p2 + in2
+        
+        
+        # 两个FPEM模块，级联的方式组合    
+        first_in5, first_in4, first_in3, first_in2 = self.make_fpem([in5, in4, in3, in2])
+        second_in5, second_in4, second_in3, second_in2 = self.make_fpem([first_in5, first_in4, first_in3, first_in2])
+        out_p5 = first_in5 + second_in5   
+        out_p4 = first_in4 + second_in4   
+        out_p3 = first_in3 + second_in3   
+        out_p2 = first_in2 + second_in2
 
         out_p5 = self.out5(out_p5)
         out_p4 = self.out4(out_p4)
@@ -254,6 +246,7 @@ class SegDetector(nn.Module):
 
         fuse = torch.cat((p5, p4, p3, p2), 1)
         '''
+
         # this is the pred module, not binarization module; 
         # We do not correct the name due to the trained model.
         binary = self.binarize(fuse)
