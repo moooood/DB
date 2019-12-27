@@ -7,7 +7,7 @@ define:
   - name: train_data
     class: ImageDataset
     data_dir:
-        - '/data/hongguan.liu/datasets/MLT-2017/'
+        - '/data/hongguan.liu/datasets/MLT-2017'
     data_list:
         - '/data/hongguan.liu/datasets/MLT-2017/train_list.txt'
     processes:
@@ -31,7 +31,7 @@ define:
   - name: validate_data
     class: ImageDataset
     data_dir:
-        - '/data/hongguan.liu/datasets/MLT-2017/'
+        - '/data/hongguan.liu/datasets/MLT-2017'
     data_list:
         - '/data/hongguan.liu/datasets/MLT-2017/test_list.txt'
     processes:
