@@ -114,7 +114,8 @@ class SegDetector(nn.Module):
         self.reduce_conv_c4.apply(self.weights_init)
         self.reduce_conv_c3.apply(self.weights_init)
         self.reduce_conv_c2.apply(self.weights_init)
-        self.fpems.apply(self.weights_init)
+        for fpem in self.fpems:
+            fpem.apply(self.weights_init)
 
     def weights_init(self, m):
         classname = m.__class__.__name__
