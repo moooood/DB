@@ -17,12 +17,24 @@ class SeparableConv2d(nn.Module):
         self.bn = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU(inplace=True)
 
+        self.depthwise_conv.apply(self.weights_init)
+        self.pointwise_conv.apply(self.weights_init)
+        self.bn.apply(self.weights_init)
+
     def forward(self, x):
         out = self.depthwise_conv(x)
         out = self.pointwise_conv(out)
         out = self.bn(out)
         out = self.relu(out)
         return out
+
+    def weights_init(self, m):
+        classname = m.__class__.__name__
+        if classname.find('Conv') != -1:
+            nn.init.kaiming_normal_(m.weight.data)
+        elif classname.find('BatchNorm') != -1:
+            m.weight.data.fill_(1.)
+            m.bias.data.fill_(1e-4)
 
 
 class FPEM(nn.Module):
@@ -114,8 +126,6 @@ class SegDetector(nn.Module):
         self.reduce_conv_c4.apply(self.weights_init)
         self.reduce_conv_c3.apply(self.weights_init)
         self.reduce_conv_c2.apply(self.weights_init)
-        for fpem in self.fpems:
-            fpem.apply(self.weights_init)
 
     def weights_init(self, m):
         classname = m.__class__.__name__
