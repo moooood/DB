@@ -15,7 +15,7 @@ class SeparableConv2d(nn.Module):
                                         bias=False)
         self.pointwise_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
         self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU()
 
         self.depthwise_conv.apply(self.weights_init)
         self.pointwise_conv.apply(self.weights_init)
