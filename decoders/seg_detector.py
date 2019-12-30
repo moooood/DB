@@ -83,22 +83,22 @@ class SegDetector(nn.Module):
         self.reduce_conv_c5 = nn.Sequential(
             nn.Conv2d(in_channels[-1], 128, 1, bias=bias),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(inplace=True)
         )
         self.reduce_conv_c4 = nn.Sequential(
             nn.Conv2d(in_channels[-2], 128, 1, bias=bias),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(inplace=True)
         )
         self.reduce_conv_c3 = nn.Sequential(
             nn.Conv2d(in_channels[-3], 128, 1, bias=bias),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(inplace=True)
         )
         self.reduce_conv_c2 = nn.Sequential(
             nn.Conv2d(in_channels[-4], 128, 1, bias=bias),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(inplace=True)
         )
         self.fpems = nn.ModuleList()
         for i in range(fpem_repeat):
