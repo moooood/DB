@@ -36,7 +36,7 @@ class ImageDataset(data.Dataset, Configurable):
             with open(self.data_list[i], 'r') as fid:
                 image_list = fid.readlines()
             if self.is_training:
-                if 'BusinessCards' in self.data_dir[0]:
+                if 'BusinessCards' or 'Contract' in self.data_dir[0]:
                     image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
                     gt_path=[self.data_dir[i]+'/train_gts/'+timg.split('.')[0]+'.txt' for timg in image_list]
                 elif 'MLT' in self.data_dir[0]:

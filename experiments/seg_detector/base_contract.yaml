@@ -6,9 +6,9 @@ define:
   - name: train_data
     class: ImageDataset
     data_dir:
-        - '/data/hongguan.liu/datasets/BusinessCards_DB'
+        - '/data/hongguan.liu/datasets/Contract_DB'
     data_list:
-        - '/data/hongguan.liu/datasets/BusinessCards_DB/train_list.txt'
+        - '/data/hongguan.liu/datasets/Contract_DB/train_list.txt'
     processes:
         - class: AugmentDetectionData
           augmenter_args:
@@ -30,9 +30,9 @@ define:
   - name: validate_data
     class: ImageDataset
     data_dir:
-        - '/data/hongguan.liu/datasets/BusinessCards_DB'
+        - '/data/hongguan.liu/datasets/Contract_DB'
     data_list:
-        - '/data/hongguan.liu/datasets/BusinessCards_DB/test_list.txt'
+        - '/data/hongguan.liu/datasets/Contract_DB/test_list.txt'
     processes:
         - class: AugmentDetectionData
           augmenter_args:
