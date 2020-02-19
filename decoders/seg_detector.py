@@ -1,72 +1,15 @@
 from collections import OrderedDict
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 BatchNorm2d = nn.BatchNorm2d
-
-
-###
-class SeparableConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
-        super(SeparableConv2d, self).__init__()
-        self.depthwise_conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1,
-                                        groups=in_channels,
-                                        bias=False)
-        self.pointwise_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU()
-
-        self.depthwise_conv.apply(self.weights_init)
-        self.pointwise_conv.apply(self.weights_init)
-        self.bn.apply(self.weights_init)
-
-    def forward(self, x):
-        out = self.depthwise_conv(x)
-        out = self.pointwise_conv(out)
-        out = self.bn(out)
-        out = self.relu(out)
-        return out
-
-    def weights_init(self, m):
-        classname = m.__class__.__name__
-        if classname.find('Conv') != -1:
-            nn.init.kaiming_normal_(m.weight.data)
-        elif classname.find('BatchNorm') != -1:
-            m.weight.data.fill_(1.)
-            m.bias.data.fill_(1e-4)
-
-
-class FPEM(nn.Module):
-    def __init__(self, in_channels=128):
-        super().__init__()
-        self.up_add1 = SeparableConv2d(in_channels, in_channels, 1)
-        self.up_add2 = SeparableConv2d(in_channels, in_channels, 1)
-        self.up_add3 = SeparableConv2d(in_channels, in_channels, 1)
-        self.down_add1 = SeparableConv2d(in_channels, in_channels, 2)
-        self.down_add2 = SeparableConv2d(in_channels, in_channels, 2)
-        self.down_add3 = SeparableConv2d(in_channels, in_channels, 2)
-
-    def forward(self, c2, c3, c4, c5):
-        # up scale
-        c4 = self.up_add1(self._upsample_add(c5, c4))
-        c3 = self.up_add2(self._upsample_add(c4, c3))
-        c2 = self.up_add3(self._upsample_add(c3, c2))
-
-        # down scale
-        c3 = self.down_add1(self._upsample_add(c3, c2))
-        c4 = self.down_add2(self._upsample_add(c4, c3))
-        c5 = self.down_add3(self._upsample_add(c5, c4))
-        return c2, c3, c4, c5
-
-    def _upsample_add(self, x, y):
-        return F.interpolate(x, size=y.size()[2:], mode='bilinear') + y
 
 
 class SegDetector(nn.Module):
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
-                 inner_channels=512, k=10,
+                 inner_channels=256, k=10,
                  bias=False, adaptive=False, smooth=False, serial=False,
                  *args, **kwargs):
         '''
@@ -76,33 +19,31 @@ class SegDetector(nn.Module):
         serial: If true, thresh prediction will combine segmentation result as input.
         '''
         super(SegDetector, self).__init__()
-        fpem_repeat = 2
         self.k = k
         self.serial = serial
+        self.up5 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.up4 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.up3 = nn.Upsample(scale_factor=2, mode='nearest')
 
-        self.reduce_conv_c5 = nn.Sequential(
-            nn.Conv2d(in_channels[-1], 128, 1, bias=bias),
-            nn.BatchNorm2d(128),
-            nn.ReLU()
-        )
-        self.reduce_conv_c4 = nn.Sequential(
-            nn.Conv2d(in_channels[-2], 128, 1, bias=bias),
-            nn.BatchNorm2d(128),
-            nn.ReLU()
-        )
-        self.reduce_conv_c3 = nn.Sequential(
-            nn.Conv2d(in_channels[-3], 128, 1, bias=bias),
-            nn.BatchNorm2d(128),
-            nn.ReLU()
-        )
-        self.reduce_conv_c2 = nn.Sequential(
-            nn.Conv2d(in_channels[-4], 128, 1, bias=bias),
-            nn.BatchNorm2d(128),
-            nn.ReLU()
-        )
-        self.fpems = nn.ModuleList()
-        for i in range(fpem_repeat):
-            self.fpems.append(FPEM(128))
+        self.in5 = nn.Conv2d(in_channels[-1], inner_channels, 1, bias=bias)
+        self.in4 = nn.Conv2d(in_channels[-2], inner_channels, 1, bias=bias)
+        self.in3 = nn.Conv2d(in_channels[-3], inner_channels, 1, bias=bias)
+        self.in2 = nn.Conv2d(in_channels[-4], inner_channels, 1, bias=bias)
+
+        self.out5 = nn.Sequential(
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            nn.Upsample(scale_factor=8, mode='nearest'))
+        self.out4 = nn.Sequential(
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            nn.Upsample(scale_factor=4, mode='nearest'))
+        self.out3 = nn.Sequential(
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            nn.Upsample(scale_factor=2, mode='nearest'))
+        self.out2 = nn.Conv2d(
+            inner_channels, inner_channels // 4, 3, padding=1, bias=bias)
 
         self.binarize = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
@@ -117,15 +58,19 @@ class SegDetector(nn.Module):
         self.binarize.apply(self.weights_init)
 
         self.adaptive = adaptive
-        if self.adaptive:
+        if adaptive:
             self.thresh = self._init_thresh(
-                inner_channels, serial=self.serial, smooth=smooth, bias=bias)
+                inner_channels, serial=serial, smooth=smooth, bias=bias)
             self.thresh.apply(self.weights_init)
 
-        self.reduce_conv_c5.apply(self.weights_init)
-        self.reduce_conv_c4.apply(self.weights_init)
-        self.reduce_conv_c3.apply(self.weights_init)
-        self.reduce_conv_c2.apply(self.weights_init)
+        self.in5.apply(self.weights_init)
+        self.in4.apply(self.weights_init)
+        self.in3.apply(self.weights_init)
+        self.in2.apply(self.weights_init)
+        self.out5.apply(self.weights_init)
+        self.out4.apply(self.weights_init)
+        self.out3.apply(self.weights_init)
+        self.out2.apply(self.weights_init)
 
     def weights_init(self, m):
         classname = m.__class__.__name__
@@ -152,8 +97,9 @@ class SegDetector(nn.Module):
             nn.Sigmoid())
         return self.thresh
 
-    def _init_upsample(self, in_channels,
-                       out_channels, smooth=False, bias=False):
+    def _init_upsample(self,
+                       in_channels, out_channels,
+                       smooth=False, bias=False):
         if smooth:
             inter_out_channels = out_channels
             if out_channels == 1:
@@ -172,32 +118,22 @@ class SegDetector(nn.Module):
 
     def forward(self, features, gt=None, masks=None, training=False):
         c2, c3, c4, c5 = features
+        in5 = self.in5(c5)
+        in4 = self.in4(c4)
+        in3 = self.in3(c3)
+        in2 = self.in2(c2)
 
-        c2 = self.reduce_conv_c2(c2)
-        c3 = self.reduce_conv_c3(c3)
-        c4 = self.reduce_conv_c4(c4)
-        c5 = self.reduce_conv_c5(c5)
+        out4 = self.up5(in5) + in4  # 1/16
+        out3 = self.up4(out4) + in3  # 1/8
+        out2 = self.up3(out3) + in2  # 1/4
 
-        for i, fpem in enumerate(self.fpems):
-            c2, c3, c4, c5 = fpem(c2, c3, c4, c5)
-            if i == 0:
-                c2_ffm = c2
-                c3_ffm = c3
-                c4_ffm = c4
-                c5_ffm = c5
-            else:
-                c2_ffm += c2
-                c3_ffm += c3
-                c4_ffm += c4
-                c5_ffm += c5
+        p5 = self.out5(in5)
+        p4 = self.out4(out4)
+        p3 = self.out3(out3)
+        p2 = self.out2(out2)
 
-        # FFM
-        c5 = F.interpolate(c5_ffm, c2_ffm.size()[-2:], mode='bilinear')
-        c4 = F.interpolate(c4_ffm, c2_ffm.size()[-2:], mode='bilinear')
-        c3 = F.interpolate(c3_ffm, c2_ffm.size()[-2:], mode='bilinear')
-        fuse = torch.cat([c2_ffm, c3, c4, c5], dim=1)
-
-        # this is the pred module, not binarization module; 
+        fuse = torch.cat((p5, p4, p3, p2), 1)
+        # this is the pred module, not binarization module;
         # We do not correct the name due to the trained model.
         binary = self.binarize(fuse)
         if self.training:
